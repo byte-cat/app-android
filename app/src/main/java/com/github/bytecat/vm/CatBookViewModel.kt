@@ -2,25 +2,22 @@ package com.github.bytecat.vm
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import com.github.bytecat.CivetCat
+import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
-import com.github.bytecat.contact.Contact
 
-class CatBookViewModel(catBook: CatBook) : ViewModel() {
+class CatBookViewModel : ViewModel() {
 
-    val cats = mutableStateListOf<Contact>()
+    val cats = mutableStateListOf<CivetCat>()
 
-    init {
-        cats.addAll(catBook.cats)
-    }
-
-    fun addCat(cat: Contact) {
+    fun addCat(cat: CivetCat) {
         if (cats.contains(cat)) {
             return
         }
         cats.add(cat)
     }
 
-    fun removeCat(cat: Contact) {
+    fun removeCat(cat: CivetCat) {
         cats.remove(cat)
     }
 

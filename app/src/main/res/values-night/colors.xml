@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="cat_item_background">#202020</color>
+    <color name="cat_item_name">#E0E0E0</color>
+    <color name="cat_item_ip">#A0A0A0</color>
+</resources>

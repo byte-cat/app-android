@@ -6,7 +6,22 @@ import android.os.IBinder
 
 class ByteCatService : Service() {
 
-    override fun onBind(intent: Intent): IBinder {
-        TODO("Return the communication channel to the service.")
+    private val byteCatBinder: ByteCatBinder by lazy {
+        ByteCatBinder()
     }
+
+    override fun onCreate() {
+        super.onCreate()
+        byteCatBinder.startup()
+    }
+
+    override fun onBind(intent: Intent): IBinder {
+        return byteCatBinder
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        byteCatBinder.shutdown()
+    }
+
 }

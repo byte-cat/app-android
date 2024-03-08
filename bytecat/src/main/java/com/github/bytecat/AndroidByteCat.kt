@@ -4,9 +4,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import com.github.bytecat.contact.Contact
+import com.github.bytecat.contact.Cat
 import com.github.bytecat.handler.IHandler
-import com.github.bytecat.platform.IPlatform
+import com.github.bytecat.platform.ISystemInfo
+import com.github.bytecat.utils.IDebugger
 
 class AndroidByteCat : ByteCat() {
 
@@ -18,8 +19,8 @@ class AndroidByteCat : ByteCat() {
 
     override val handler: IHandler by lazy { AndroidHandler() }
 
-    override val platform: IPlatform by lazy {
-        object : IPlatform {
+    override val systemInfo: ISystemInfo by lazy {
+        object : ISystemInfo {
             override val system: String
                 get() = "Android ${Build.VERSION.RELEASE}"
             override val systemUserName: String
@@ -63,12 +64,12 @@ class AndroidByteCat : ByteCat() {
             Log.d(TAG, "onBroadcastReceived fromIp=$fromIp data=${String(data)}")
         }
 
-        override fun onContactAdd(contact: Contact) {
-            Log.d(TAG, "onContactAdd ${contact.name}")
+        override fun onContactAdd(cat: Cat) {
+            Log.d(TAG, "onContactAdd ${cat.name}")
         }
 
-        override fun onContactRemove(contact: Contact) {
-            Log.d(TAG, "onContactRemove ${contact.name}")
+        override fun onContactRemove(cat: Cat) {
+            Log.d(TAG, "onContactRemove ${cat.name}")
         }
 
         override fun onMessageReady() {
