@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,13 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -34,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
+import com.github.bytecat.ext.iconRes
 import com.github.bytecat.ui.theme.ByteHoleTheme
 import com.github.bytecat.vm.CatBookViewModel
 
@@ -65,6 +71,11 @@ class MainActivity : ComponentActivity() {
         ByteCatManager.connect(this, object : ByteCatManager.ConnectCallback {
             override fun onConnected(catService: IByteCatService) {
                 catService.setCallback(object : CallbackImpl() {
+                    override fun onReady(cat: CivetCat?) {
+                        Log.d(TAG, "onReady cat=$cat")
+                        catBookVM.myCat.value = cat
+                    }
+
                     override fun onCatAdd(cat: CivetCat?) {
                         cat ?: return
                         catBookVM.addCat(cat)
@@ -91,37 +102,77 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainView(catBookVM: CatBookViewModel, onItemClick: (cat: CivetCat) -> Unit) {
-    LazyColumn {
-        itemsIndexed(catBookVM.cats) { index, item ->
-            CatItemView(cat = item, onItemClick)
-            if (index < catBookVM.cats.lastIndex) {
-                Divider(color = colorResource(id = R.color.cat_item_divider))
+    val myCat = catBookVM.myCat.value
+    Column {
+        if (myCat != null) {
+            MyCatView(myCat = myCat)
+            Log.e("MainActivity", "MainView myCat has value")
+        } else {
+            Log.e("MainActivity", "MainView myCat is null")
+        }
+        LazyColumn {
+            itemsIndexed(catBookVM.cats) { index, item ->
+                CatItemView(cat = item, onItemClick)
+                if (index < catBookVM.cats.lastIndex) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
-    val deviceIconRes = when(cat.platform) {
-        Platform.Android -> R.drawable.ic_android
-        Platform.Mac -> R.drawable.ic_apple_finder
-        Platform.IPhone -> R.drawable.ic_apple
-        Platform.PC -> R.drawable.ic_microsoft_windows
-        else -> R.drawable.ic_cat
+fun MyCatView(myCat: CivetCat) {
+    Column (
+        Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+            .background(
+                color = colorResource(id = R.color.cat_item_background),
+                shape = RoundedCornerShape(corner = CornerSize(16.dp))
+            )
+            .border(
+                width = 1.dp,
+                color = colorResource(id = R.color.cat_item_icon_tint),
+                shape = RoundedCornerShape(corner = CornerSize(16.dp))
+            )
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            modifier = Modifier.size(48.dp),
+            painter = painterResource(id = myCat.platform.iconRes),
+            colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
+            contentDescription = ""
+        )
+        Text(text = myCat.name)
+        Text(text = myCat.ip)
     }
+}
+
+@Composable
+fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
+
+    val roundedCornerShape = RoundedCornerShape(corner = CornerSize(16.dp))
     Row(
         modifier = Modifier
             .height(56.dp)
-            .background(colorResource(id = R.color.cat_item_background))
-            .clickable(onClick = {
+            .padding(horizontal = 16.dp)
+            .clip(shape = roundedCornerShape)
+            .clickable {
                 onClick.invoke(cat)
-            }),
+            }
+            .background(color = colorResource(id = R.color.cat_item_background))
+            .border(
+                width = 0.5.dp,
+                color = colorResource(id = R.color.cat_item_icon_tint),
+                shape = roundedCornerShape
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(Modifier.width(12.dp))
         Image(
-            painter = painterResource(id = deviceIconRes),
+            painter = painterResource(id = cat.platform.iconRes),
             modifier = Modifier
                 .size(40.dp)
                 .padding(4.dp),
@@ -147,7 +198,10 @@ fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
             painter = painterResource(id = R.drawable.ic_file_send_outline),
             modifier = Modifier
                 .size(32.dp)
-                .padding(4.dp),
+                .clip(roundedCornerShape)
+                .clickable {
+                    onClick.invoke(cat)
+                }.padding(4.dp),
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
         )
@@ -156,7 +210,10 @@ fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
             painter = painterResource(id = R.drawable.ic_message_fast_outline),
             modifier = Modifier
                 .size(32.dp)
-                .padding(4.dp),
+                .clip(roundedCornerShape)
+                .clickable {
+                    onClick.invoke(cat)
+                }.padding(4.dp),
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
         )

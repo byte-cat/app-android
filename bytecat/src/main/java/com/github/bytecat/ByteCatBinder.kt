@@ -1,12 +1,33 @@
 package com.github.bytecat
 
+import android.util.Log
 import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
 import java.util.LinkedList
 
 class ByteCatBinder : IByteCatService.Stub() {
 
-    private val byteCat by lazy { AndroidByteCat() }
+    companion object {
+        private const val TAG = "ByteCatBinder"
+    }
+
+    private lateinit var myCat: CivetCat
+
+    private val catCallback by lazy {
+        object : ByteCat.Callback {
+            override fun onReady(myCat: Cat) {
+                this@ByteCatBinder.myCat = CivetCat(myCat)
+                if (callback != null) {
+                    callback?.onReady(this@ByteCatBinder.myCat)
+                }
+            }
+            override fun onCatMessage(cat: Cat, text: String) {
+//                callback?
+            }
+        }
+    }
+
+    private val byteCat by lazy { AndroidByteCat().apply { setCallback(catCallback) } }
 
     private val civetCats = LinkedList<CivetCat>()
 
@@ -55,6 +76,9 @@ class ByteCatBinder : IByteCatService.Stub() {
 
     override fun setCallback(callback: ICallback?) {
         this.callback = callback
+        if (::myCat.isInitialized) {
+            callback?.onReady(myCat)
+        }
     }
 
 }
