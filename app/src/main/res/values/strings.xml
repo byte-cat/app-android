@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ByteHole-android</string>
     <string name="empty_cats">No others</string>
+    <string name="hint_message_to_send">Type in message and click send button</string>
 </resources>

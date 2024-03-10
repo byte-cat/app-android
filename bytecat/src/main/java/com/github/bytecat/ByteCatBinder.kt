@@ -70,8 +70,10 @@ class ByteCatBinder : IByteCatService.Stub() {
         byteCat.shutdown()
     }
 
-    override fun getCats(): MutableList<CivetCat> {
-        TODO("Not yet implemented")
+    override fun getCats(): List<CivetCat> {
+        return byteCat.catBook.cats.map {
+            CivetCat(it)
+        }
     }
 
     override fun setCallback(callback: ICallback?) {
