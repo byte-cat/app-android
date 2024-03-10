@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ByteHole-android</string>
+    <string name="empty_cats">No others</string>
 </resources>

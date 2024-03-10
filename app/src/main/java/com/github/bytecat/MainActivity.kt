@@ -33,7 +33,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -105,16 +108,47 @@ fun MainView(catBookVM: CatBookViewModel, onItemClick: (cat: CivetCat) -> Unit) 
     val myCat = catBookVM.myCat.value
     Column {
         if (myCat != null) {
+            Spacer(modifier = Modifier.height(16.dp))
             MyCatView(myCat = myCat)
-            Log.e("MainActivity", "MainView myCat has value")
         } else {
             Log.e("MainActivity", "MainView myCat is null")
         }
-        LazyColumn {
-            itemsIndexed(catBookVM.cats) { index, item ->
-                CatItemView(cat = item, onItemClick)
-                if (index < catBookVM.cats.lastIndex) {
-                    Spacer(modifier = Modifier.height(16.dp))
+        if (catBookVM.cats.isEmpty()) {
+            EmptyView()
+        } else {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Divider(
+                    modifier = Modifier.weight(1F, true),
+                    thickness = 0.5.dp,
+                    color = colorResource(
+                        id = R.color.cat_item_divider
+                    )
+                )
+                Text(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    text = "${catBookVM.cats.size} cats",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 10.sp
+                )
+                Divider(
+                    modifier = Modifier.weight(1F, true),
+                    thickness = 0.5.dp,
+                    color = colorResource(
+                        id = R.color.cat_item_divider
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyColumn {
+                itemsIndexed(catBookVM.cats) { index, item ->
+                    CatItemView(cat = item, onItemClick)
+                    if (index < catBookVM.cats.lastIndex) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
@@ -122,10 +156,34 @@ fun MainView(catBookVM: CatBookViewModel, onItemClick: (cat: CivetCat) -> Unit) 
 }
 
 @Composable
+fun EmptyView() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Image(
+            modifier = Modifier.width(240.dp),
+            painter = painterResource(id = R.drawable.img_no_cats),
+            contentDescription = ""
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.W400,
+            fontSize = 24.sp,
+            color = colorResource(id = R.color.cat_item_name),
+            text = stringResource(id = R.string.empty_cats)
+        )
+    }
+}
+
+@Composable
 fun MyCatView(myCat: CivetCat) {
-    Column (
+    Column(
         Modifier
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .background(
                 color = colorResource(id = R.color.cat_item_background),
@@ -145,8 +203,18 @@ fun MyCatView(myCat: CivetCat) {
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
         )
-        Text(text = myCat.name)
-        Text(text = myCat.ip)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = myCat.name,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = myCat.ip,
+            fontWeight = FontWeight.Light,
+            fontSize = 12.sp
+        )
     }
 }
 
@@ -185,12 +253,16 @@ fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
                 text = cat.name,
                 modifier = Modifier.fillMaxWidth(),
                 fontWeight = FontWeight.Bold,
-                color = colorResource(id = R.color.cat_item_name)
+                fontSize = 12.sp,
+                color = colorResource(id = R.color.cat_item_name),
+                overflow = TextOverflow.Ellipsis
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = cat.ip,
                 modifier = Modifier.fillMaxWidth(),
-                fontSize = 12.sp
+                fontWeight = FontWeight.Light,
+                fontSize = 10.sp
             )
         }
         Spacer(Modifier.width(8.dp))
@@ -201,7 +273,8 @@ fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
                 .clip(roundedCornerShape)
                 .clickable {
                     onClick.invoke(cat)
-                }.padding(4.dp),
+                }
+                .padding(4.dp),
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
         )
@@ -213,7 +286,8 @@ fun CatItemView(cat: CivetCat, onClick: (cat: CivetCat) -> Unit) {
                 .clip(roundedCornerShape)
                 .clickable {
                     onClick.invoke(cat)
-                }.padding(4.dp),
+                }
+                .padding(4.dp),
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
         )

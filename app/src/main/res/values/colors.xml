@@ -12,5 +12,5 @@
     <color name="cat_item_icon_tint">@color/cat_item_name</color>
     <color name="cat_item_name">#343434</color>
     <color name="cat_item_ip">#404040</color>
-    <color name="cat_item_divider">@color/cat_item_icon_tint</color>
+    <color name="cat_item_divider">#D0D0D0</color>
 </resources>
