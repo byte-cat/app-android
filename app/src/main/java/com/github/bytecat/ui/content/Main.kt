@@ -287,7 +287,10 @@ fun CatItemDialog(cat: CivetCat, onDismissRequest: () -> Unit) {
         mutableStateOf("")
     }
 
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(onDismissRequest = {
+        // TODO("Save draft")
+        onDismissRequest.invoke()
+    }) {
         Column(
             modifier = Modifier
                 .clip(shape = RoundedCornerShape(corner = CornerSize(16.dp)))
