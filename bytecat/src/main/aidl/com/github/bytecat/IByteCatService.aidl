@@ -1,10 +1,11 @@
 // IByteCatService.aidl
 package com.github.bytecat;
 
-import com.github.bytecat.CivetCat;
+import com.github.bytecat.CatParcel;
 import com.github.bytecat.ICallback;
 
 interface IByteCatService {
-    List<CivetCat> getCats();
+    List<CatParcel> getCats();
+    void sendMessage(in CatParcel toCat, String text);
     void setCallback(ICallback callback);
 }

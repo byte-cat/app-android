@@ -5,21 +5,18 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.window.Popup
 import com.github.bytecat.contact.CatBook
+import com.github.bytecat.message.MessageDataParcel
+import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.ui.content.MainView
 import com.github.bytecat.ui.theme.ByteCatTheme
-import com.github.bytecat.vm.CatBookViewModel
+import com.github.bytecat.vm.CatBookVM
+import com.github.bytecat.vm.MessageBoxVM
 
 class MainActivity : ComponentActivity() {
 
@@ -27,7 +24,8 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
     }
 
-    private val catBookVM by lazy { CatBookViewModel() }
+    private val catBookVM by lazy { CatBookVM() }
+    private val messageBoxVM by lazy { MessageBoxVM() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,34 +37,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainView(catBookVM)
+                    MainView(catBookVM, messageBoxVM)
                 }
             }
         }
 
+        ByteCatManager.catCallbackRegistry.register(catBookVM)
+        ByteCatManager.catCallbackRegistry.register(messageBoxVM)
+        ByteCatManager.messageCallbackRegistry.register(messageBoxVM)
         ByteCatManager.connect(this, object : ByteCatManager.ConnectCallback {
             override fun onConnected(catService: IByteCatService) {
-                catService.setCallback(object : CallbackImpl() {
-                    override fun onReady(cat: CivetCat?) {
-                        Log.d(TAG, "onReady cat=$cat")
-                        catBookVM.myCat.value = cat
-                        catBookVM.cats.addAll(catService.cats)
-                    }
-
-                    override fun onCatAdd(cat: CivetCat?) {
-                        cat ?: return
-                        catBookVM.addCat(cat)
-                    }
-
-                    override fun onCatRemove(cat: CivetCat?) {
-                        cat ?: return
-                        catBookVM.removeCat(cat)
-                    }
-
-                    override fun onCatUpdate(cat: CivetCat?) {
-                        cat ?: return
-                    }
-                })
             }
 
             override fun onDisconnected() {
@@ -77,6 +57,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        ByteCatManager.catCallbackRegistry.unregister(catBookVM)
+        ByteCatManager.catCallbackRegistry.unregister(messageBoxVM)
+        ByteCatManager.messageCallbackRegistry.unregister(messageBoxVM)
         ByteCatManager.disconnect()
     }
 
@@ -86,11 +69,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     val catBook = CatBook()
-    catBook.addContact("Cat1", "Mac", "1234", 0, 1)
-    catBook.addContact("Cat2", "iPhone", "2345", 0, 1)
-    catBook.addContact("Cat3", "Android", "3456", 0, 1)
-    catBook.addContact("Cat4", "Android", "4567", 0, 1)
+    catBook.addCat("Cat1", "Mac", "1234", 0, 1)
+    catBook.addCat("Cat2", "iPhone", "2345", 0, 1)
+    catBook.addCat("Cat3", "Android", "3456", 0, 1)
+    catBook.addCat("Cat4", "Android", "4567", 0, 1)
     MainView(
-        catBookVM = CatBookViewModel()
+        catBookVM = CatBookVM(), msgBoxVM = MessageBoxVM()
     )
 }
