@@ -1,5 +1,6 @@
 package com.github.bytecat
 
+import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -8,8 +9,9 @@ import com.github.bytecat.contact.Cat
 import com.github.bytecat.handler.IHandler
 import com.github.bytecat.platform.ISystemInfo
 import com.github.bytecat.utils.IDebugger
+import java.io.File
 
-class AndroidByteCat : ByteCat() {
+class AndroidByteCat(private val context: Context) : ByteCat() {
 
     companion object {
         private const val TAG = "AndroidByteHole"
@@ -32,6 +34,17 @@ class AndroidByteCat : ByteCat() {
 
         }
     }
+
+    override var outputDir: File = File(context.filesDir, "download")
+        get() {
+            if (!field.exists()) {
+                field.mkdirs()
+            }
+            return field
+        }
+        set(value) {
+            field = value
+        }
 
     private var catName: String? = null
 

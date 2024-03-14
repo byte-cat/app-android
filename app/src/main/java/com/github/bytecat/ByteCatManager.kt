@@ -7,9 +7,9 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.IBinder
 import android.util.Log
+import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.utils.Registry
-import java.io.File
 import java.lang.ref.WeakReference
 
 object ByteCatManager {
@@ -99,12 +99,20 @@ object ByteCatManager {
         connectedContextRef = null
     }
 
-    fun sendMessage(cat: CatParcel, text: String) {
-        iCatService?.sendMessage(cat, text)
+    fun sendText(cat: CatParcel, text: String) {
+        iCatService?.sendText(cat, text)
     }
 
     fun sendFileRequest(cat: CatParcel, uri: Uri) {
         iCatService?.sendFileRequestByUri(cat, uri)
+    }
+
+    fun rejectFileRequest(cat: CatParcel, fileReq: FileReqDataParcel) {
+        iCatService?.rejectFileRequest(cat, fileReq)
+    }
+
+    fun acceptFileRequest(cat: CatParcel, fileReq: FileReqDataParcel) {
+        iCatService?.acceptFileRequest(cat, fileReq)
     }
 
     interface ConnectCallback {

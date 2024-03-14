@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import com.github.bytecat.ByteCatManager
 import com.github.bytecat.CatParcel
+import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 
@@ -14,7 +15,7 @@ class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.Mes
 
     private fun newMessage(catParcel: CatParcel, messageParcel: MessageParcel<*>) {
         when (messageParcel.data) {
-            is TextDataParcel -> {
+            is TextDataParcel, is FileReqDataParcel -> {
                 recentMessages[catParcel] = messageParcel
             }
         }

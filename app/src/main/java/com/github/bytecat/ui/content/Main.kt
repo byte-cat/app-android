@@ -3,6 +3,7 @@ package com.github.bytecat.ui.content
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.text.format.Formatter
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -51,9 +53,8 @@ import com.github.bytecat.ByteCatManager
 import com.github.bytecat.CatParcel
 import com.github.bytecat.R
 import com.github.bytecat.ext.iconRes
+import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.TextDataParcel
-import com.github.bytecat.protocol.data.FileResponseData
-import com.github.bytecat.protocol.data.TextData
 import com.github.bytecat.vm.CatBookVM
 import com.github.bytecat.vm.MessageBoxVM
 
@@ -71,14 +72,15 @@ fun MainView(
         mutableStateOf<CatParcel?>(null)
     }
 
-    val pickLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        val toCat = pendingFileCat.value ?: return@rememberLauncherForActivityResult
+    val pickLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            val toCat = pendingFileCat.value ?: return@rememberLauncherForActivityResult
 
-        ByteCatManager.sendFileRequest(toCat, uri)
+            ByteCatManager.sendFileRequest(toCat, uri)
 
-        pendingFileCat.value = null
-    }
+            pendingFileCat.value = null
+        }
 
     MainContent(
         catBookVM = catBookVM,
@@ -192,14 +194,15 @@ fun MainContent(
                         },
                         extendView = msgBoxVM.getMessageDataOrNull(item)?.let { data ->
                             {
-                                when(data) {
+                                when (data) {
                                     is TextDataParcel -> {
-                                        TextDataView(
-                                            data = data,
-                                            cat = item,
-                                            msgBoxVM = msgBoxVM
-                                        )
+                                        TextDataView(data = data, cat = item, msgBoxVM = msgBoxVM)
                                     }
+
+                                    is FileReqDataParcel -> {
+                                        FileReqView(data = data, cat = item, msgBoxVM = msgBoxVM)
+                                    }
+
                                     else -> null
                                 }
                             }
@@ -413,7 +416,7 @@ fun CatItemDialog(cat: CatParcel, onDismissRequest: () -> Unit) {
                         .size(40.dp, 40.dp)
                         .clip(shape = RoundedCornerShape(corner = CornerSize(size = 20.dp)))
                         .clickable {
-                            ByteCatManager.sendMessage(cat, text.value)
+                            ByteCatManager.sendText(cat, text.value)
                             onDismissRequest.invoke()
                         }
                         .padding(all = 8.dp),
@@ -441,58 +444,106 @@ fun TextDataView(data: TextDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
             fontWeight = FontWeight.Normal
         )
         Divider()
-        Row(
+        DoubleImageButtonsRow(
+            painter1 = painterResource(id = R.drawable.ic_message_check_outline),
+            painter2 = painterResource(id = R.drawable.ic_content_copy),
+            onClick1 = {
+                msgBoxVM.markAsRead(cat)
+            },
+            onClick2 = {
+                val clipboard =
+                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(
+                    ClipData.newPlainText(
+                        cat.name,
+                        data.text
+                    )
+                )
+                msgBoxVM.markAsRead(cat)
+                Toast
+                    .makeText(
+                        context,
+                        R.string.toast_content_copied,
+                        Toast.LENGTH_SHORT
+                    )
+                    .show()
+            }
+        )
+    }
+}
+
+@Composable
+fun FileReqView(data: FileReqDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
+    val context = LocalContext.current
+    Column {
+        Text(
+            text = "${data.name}(${Formatter.formatFileSize(context, data.size)})",
+            modifier = Modifier.padding(16.dp),
+            color = colorResource(id = R.color.cat_item_name),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Divider()
+        DoubleImageButtonsRow(
+            painter1 = painterResource(id = R.drawable.ic_close),
+            painter2 = painterResource(id = R.drawable.ic_folder_arrow_down_outline), 
+            onClick1 = {
+                ByteCatManager.rejectFileRequest(cat, data)
+                msgBoxVM.markAsRead(cat)
+            }, 
+            onClick2 = {
+                ByteCatManager.acceptFileRequest(cat, data)
+                msgBoxVM.markAsRead(cat)
+            }
+        )
+    }
+}
+
+@Composable
+fun DoubleImageButtonsRow(
+    painter1: Painter,
+    painter2: Painter,
+    onClick1: () -> Unit,
+    onClick2: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painter1,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_message_check_outline),
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(
-                        RoundedCornerShape(16.dp)
-                    )
-                    .clickable {
-                        msgBoxVM.markAsRead(cat)
-                    }
-                    .padding(all = 4.dp),
-                colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
-                contentDescription = ""
-            )
-            Spacer(Modifier.width(8.dp))
-            Image(
-                painter = painterResource(id = R.drawable.ic_content_copy),
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(
-                        RoundedCornerShape(16.dp)
-                    )
-                    .clickable {
-                        val clipboard =
-                            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(
-                            ClipData.newPlainText(
-                                cat.name,
-                                data.text
-                            )
-                        )
-                        msgBoxVM.markAsRead(cat)
-                        Toast
-                            .makeText(
-                                context,
-                                R.string.toast_content_copied,
-                                Toast.LENGTH_SHORT
-                            )
-                            .show()
-                    }
-                    .padding(all = 4.dp),
-                colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
-                contentDescription = ""
-            )
-            Spacer(Modifier.width(12.dp))
-        }
+                .size(32.dp)
+                .clip(
+                    RoundedCornerShape(16.dp)
+                )
+                .clickable {
+                    onClick1.invoke()
+                }
+                .padding(all = 4.dp),
+            colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
+            contentDescription = ""
+        )
+        Spacer(Modifier.width(8.dp))
+        Image(
+            painter = painter2,
+            modifier = Modifier
+                .size(32.dp)
+                .clip(
+                    RoundedCornerShape(16.dp)
+                )
+                .clickable {
+                    onClick2.invoke()
+                }
+                .padding(all = 4.dp),
+            colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
+            contentDescription = ""
+        )
+        Spacer(Modifier.width(12.dp))
     }
 }

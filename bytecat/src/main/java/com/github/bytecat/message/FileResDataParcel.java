@@ -7,27 +7,24 @@ import androidx.annotation.NonNull;
 
 import com.github.bytecat.protocol.data.FileResponseData;
 
-public class FileResDataParcel implements Parcelable {
+import java.util.Objects;
 
-    public String responseId;
-    public int responseCode;
-    public int streamPort;
-    public String acceptCode;
+public class FileResDataParcel extends FileResponseData implements Parcelable {
 
-    public FileResDataParcel() {}
+    public FileResDataParcel(@NonNull String responseId, int responseCode, int streamPort, @NonNull String acceptCode) {
+        super(responseId, responseCode, streamPort, acceptCode);
+    }
+
+    public FileResDataParcel() {
+        this("", 0, 0, "");
+    }
 
     public FileResDataParcel(FileResponseData fileRes) {
-        this.responseId = fileRes.getResponseId();
-        this.responseCode = fileRes.getResponseCode();
-        this.streamPort = fileRes.getStreamPort();
-        this.acceptCode = fileRes.getAcceptCode();
+        this(fileRes.getResponseId(), fileRes.getResponseCode(), fileRes.getStreamPort(), fileRes.getAcceptCode());
     }
 
     protected FileResDataParcel(Parcel in) {
-        this.responseId = in.readString();
-        this.responseCode = in.readInt();
-        this.streamPort = in.readInt();
-        this.acceptCode = in.readString();
+        this(Objects.requireNonNull(in.readString()), in.readInt(), in.readInt(), Objects.requireNonNull(in.readString()));
     }
 
     public static final Creator<FileResDataParcel> CREATOR = new Creator<FileResDataParcel>() {
@@ -49,17 +46,17 @@ public class FileResDataParcel implements Parcelable {
 
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeString(responseId);
-        dest.writeInt(responseCode);
-        dest.writeInt(streamPort);
-        dest.writeString(acceptCode);
+        dest.writeString(getResponseId());
+        dest.writeInt(getResponseCode());
+        dest.writeInt(getStreamPort());
+        dest.writeString(getAcceptCode());
     }
 
     public void readFromParcel(@NonNull Parcel in) {
-        this.responseId = in.readString();
-        this.responseCode = in.readInt();
-        this.streamPort = in.readInt();
-        this.acceptCode = in.readString();
+        setResponseId(Objects.requireNonNull(in.readString()));
+        setResponseCode(in.readInt());
+        setStreamPort(in.readInt());
+        setAcceptCode(Objects.requireNonNull(in.readString()));
     }
 
 }

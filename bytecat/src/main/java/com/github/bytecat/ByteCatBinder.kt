@@ -7,12 +7,14 @@ import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
 import com.github.bytecat.file.DefaultFile
 import com.github.bytecat.file.UriFile
+import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.Message
 import com.github.bytecat.message.MessageBox
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.protocol.data.Data
+import com.github.bytecat.protocol.data.FileRequestData
 import com.github.bytecat.protocol.data.FileResponseData
 import com.github.bytecat.protocol.data.TextData
 import java.util.LinkedList
@@ -36,7 +38,7 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
         }
     }
 
-    private val byteCat by lazy { AndroidByteCat().apply { setCallback(catCallback) } }
+    private val byteCat by lazy { AndroidByteCat(context).apply { setCallback(catCallback) } }
 
     private val catParcels = LinkedList<CatParcel>()
 
@@ -50,6 +52,9 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
                     return when(data) {
                         is TextData -> {
                             TextDataParcel(data)
+                        }
+                        is FileRequestData -> {
+                            FileReqDataParcel(data)
                         }
                         is FileResponseData -> {
                             FileResDataParcel(data)
@@ -116,12 +121,12 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
         }
     }
 
-    override fun sendMessage(toCat: CatParcel?, text: String?) {
+    override fun sendText(toCat: CatParcel?, text: String?) {
         toCat ?: return
         if (text.isNullOrEmpty()) {
             return
         }
-        byteCat.sendMessage(toCat, text)
+        byteCat.sendText(toCat, text)
     }
 
     override fun sendFileRequestByPath(toCat: CatParcel?, file: String?) {
@@ -136,6 +141,17 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
         toCat ?: return
         uri ?: return
         byteCat.sendFileRequest(toCat, UriFile(context, uri))
+    }
+
+    override fun rejectFileRequest(toCat: CatParcel?, fileReq: FileReqDataParcel?) {
+        toCat ?: return
+        fileReq ?: return
+        byteCat.rejectFileRequest(toCat, fileReq)
+    }
+    override fun acceptFileRequest(toCat: CatParcel?, fileReq: FileReqDataParcel?) {
+        toCat ?: return
+        fileReq ?: return
+        byteCat.acceptFileRequest(toCat, fileReq)
     }
 
     override fun setCallback(callback: ICallback?) {

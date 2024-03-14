@@ -7,22 +7,24 @@ import androidx.annotation.NonNull;
 
 import com.github.bytecat.protocol.data.TextData;
 
-public class TextDataParcel implements Parcelable {
-    public String text;
+import java.util.Objects;
 
-    public TextDataParcel() {
+public class TextDataParcel extends TextData implements Parcelable {
+
+    public TextDataParcel(@NonNull String text) {
+        super(text);
     }
 
     public TextDataParcel(TextData textData) {
         this(textData.getText());
     }
 
-    public TextDataParcel(String text) {
-        this.text = text;
+    public TextDataParcel() {
+        this("");
     }
 
     protected TextDataParcel(Parcel in) {
-        text = in.readString();
+        this(Objects.requireNonNull(in.readString()));
     }
 
     public static final Creator<TextDataParcel> CREATOR = new Creator<TextDataParcel>() {
@@ -44,11 +46,11 @@ public class TextDataParcel implements Parcelable {
 
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeString(text);
+        dest.writeString(getText());
     }
 
     public void readFromParcel(@NonNull Parcel in) {
-        text = in.readString();
+        setText(Objects.requireNonNull(in.readString()));
     }
 
 }
