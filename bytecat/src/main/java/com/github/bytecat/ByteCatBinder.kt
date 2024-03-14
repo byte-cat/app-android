@@ -1,17 +1,23 @@
 package com.github.bytecat
 
+import android.content.Context
+import android.net.Uri
 import android.os.Parcelable
 import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
+import com.github.bytecat.file.DefaultFile
+import com.github.bytecat.file.UriFile
+import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.Message
 import com.github.bytecat.message.MessageBox
-import com.github.bytecat.message.MessageDataParcel
+import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.protocol.data.Data
-import com.github.bytecat.protocol.data.MessageData
+import com.github.bytecat.protocol.data.FileResponseData
+import com.github.bytecat.protocol.data.TextData
 import java.util.LinkedList
 
-class ByteCatBinder : IByteCatService.Stub() {
+class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
 
     companion object {
         private const val TAG = "ByteCatBinder"
@@ -42,13 +48,17 @@ class ByteCatBinder : IByteCatService.Stub() {
             val msgParcel = MessageParcel.fromReceive<Parcelable>(message, object : MessageParcel.Converter {
                 override fun <T : Parcelable> convert(data: Data): T {
                     return when(data) {
-                        is MessageData -> {
-                            MessageDataParcel(data)
+                        is TextData -> {
+                            TextDataParcel(data)
+                        }
+                        is FileResponseData -> {
+                            FileResDataParcel(data)
                         }
                         else -> throw IllegalArgumentException("Unrecognized type: ${data::class.java.name}")
                     } as T
                 }
             })
+
             callback?.onCatMessage(catParcel, msgParcel)
         }
     }
@@ -112,6 +122,20 @@ class ByteCatBinder : IByteCatService.Stub() {
             return
         }
         byteCat.sendMessage(toCat, text)
+    }
+
+    override fun sendFileRequestByPath(toCat: CatParcel?, file: String?) {
+        toCat ?: return
+        if (file.isNullOrEmpty()) {
+            return
+        }
+        byteCat.sendFileRequest(toCat, DefaultFile(file))
+    }
+
+    override fun sendFileRequestByUri(toCat: CatParcel?, uri: Uri?) {
+        toCat ?: return
+        uri ?: return
+        byteCat.sendFileRequest(toCat, UriFile(context, uri))
     }
 
     override fun setCallback(callback: ICallback?) {

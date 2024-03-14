@@ -4,10 +4,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.os.IBinder
 import android.util.Log
 import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.utils.Registry
+import java.io.File
 import java.lang.ref.WeakReference
 
 object ByteCatManager {
@@ -99,6 +101,10 @@ object ByteCatManager {
 
     fun sendMessage(cat: CatParcel, text: String) {
         iCatService?.sendMessage(cat, text)
+    }
+
+    fun sendFileRequest(cat: CatParcel, uri: Uri) {
+        iCatService?.sendFileRequestByUri(cat, uri)
     }
 
     interface ConnectCallback {

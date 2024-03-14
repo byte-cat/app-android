@@ -1,7 +1,6 @@
 package com.github.bytecat
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,8 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.github.bytecat.contact.CatBook
-import com.github.bytecat.message.MessageDataParcel
-import com.github.bytecat.message.MessageParcel
 import com.github.bytecat.ui.content.MainView
 import com.github.bytecat.ui.theme.ByteCatTheme
 import com.github.bytecat.vm.CatBookVM

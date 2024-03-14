@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,7 +51,9 @@ import com.github.bytecat.ByteCatManager
 import com.github.bytecat.CatParcel
 import com.github.bytecat.R
 import com.github.bytecat.ext.iconRes
-import com.github.bytecat.message.MessageDataParcel
+import com.github.bytecat.message.TextDataParcel
+import com.github.bytecat.protocol.data.FileResponseData
+import com.github.bytecat.protocol.data.TextData
 import com.github.bytecat.vm.CatBookVM
 import com.github.bytecat.vm.MessageBoxVM
 
@@ -59,22 +63,38 @@ private const val TAG = "Main"
 fun MainView(
     catBookVM: CatBookVM, msgBoxVM: MessageBoxVM
 ) {
-    val highlightCat = remember {
+    val pendingMessageCat = remember {
         mutableStateOf<CatParcel?>(null)
+    }
+
+    val pendingFileCat = remember {
+        mutableStateOf<CatParcel?>(null)
+    }
+
+    val pickLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val toCat = pendingFileCat.value ?: return@rememberLauncherForActivityResult
+
+        ByteCatManager.sendFileRequest(toCat, uri)
+
+        pendingFileCat.value = null
     }
 
     MainContent(
         catBookVM = catBookVM,
         msgBoxVM = msgBoxVM,
         onItemClick = { cat, index -> },
-        onFileClick = { cat, index -> },
+        onFileClick = { cat, index ->
+            pendingFileCat.value = cat
+            pickLauncher.launch("*/*")
+        },
         onMsgClick = { cat, index ->
-            highlightCat.value = cat
+            pendingMessageCat.value = cat
         }
     )
-    if (highlightCat.value != null) {
-        CatItemDialog(cat = highlightCat.value!!) {
-            highlightCat.value = null
+    if (pendingMessageCat.value != null) {
+        CatItemDialog(cat = pendingMessageCat.value!!) {
+            pendingMessageCat.value = null
         }
     }
 }
@@ -170,69 +190,20 @@ fun MainContent(
                             )
                             Spacer(Modifier.width(12.dp))
                         },
-                        extendView = msgBoxVM.getTextMessageOrNull(item)?.let { data ->
+                        extendView = msgBoxVM.getMessageDataOrNull(item)?.let { data ->
                             {
-                                Column {
-                                    Text(
-                                        text = data.text,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(64.dp)
-                                            .padding(all = 8.dp),
-                                        color = colorResource(id = R.color.cat_item_name),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Normal
-                                    )
-                                    Divider()
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(40.dp),
-                                        horizontalArrangement = Arrangement.End,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.ic_message_check_outline),
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .clip(
-                                                    RoundedCornerShape(16.dp)
-                                                )
-                                                .clickable {
-                                                    msgBoxVM.markAsRead(item)
-                                                }
-                                                .padding(all = 4.dp),
-                                            colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
-                                            contentDescription = ""
+                                when(data) {
+                                    is TextDataParcel -> {
+                                        TextDataView(
+                                            data = data,
+                                            cat = item,
+                                            msgBoxVM = msgBoxVM
                                         )
-                                        Spacer(Modifier.width(8.dp))
-                                        Image(
-                                            painter = painterResource(id = R.drawable.ic_content_copy),
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .clip(
-                                                    RoundedCornerShape(16.dp)
-                                                )
-                                                .clickable {
-                                                    val clipboard =
-                                                        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                                    clipboard.setPrimaryClip(
-                                                        ClipData.newPlainText(
-                                                            item.name,
-                                                            data.text
-                                                        )
-                                                    )
-                                                    msgBoxVM.markAsRead(item)
-                                                    Toast.makeText(context, R.string.toast_content_copied, Toast.LENGTH_SHORT).show()
-                                                }
-                                                .padding(all = 4.dp),
-                                            colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
-                                            contentDescription = ""
-                                        )
-                                        Spacer(Modifier.width(12.dp))
                                     }
+                                    else -> null
                                 }
                             }
+
                         }
                     )
                     if (index < catBookVM.cats.lastIndex) {
@@ -451,6 +422,77 @@ fun CatItemDialog(cat: CatParcel, onDismissRequest: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
+        }
+    }
+}
+
+@Composable
+fun TextDataView(data: TextDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
+    val context = LocalContext.current
+    Column {
+        Text(
+            text = data.text,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(all = 8.dp),
+            color = colorResource(id = R.color.cat_item_name),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Normal
+        )
+        Divider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_message_check_outline),
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(
+                        RoundedCornerShape(16.dp)
+                    )
+                    .clickable {
+                        msgBoxVM.markAsRead(cat)
+                    }
+                    .padding(all = 4.dp),
+                colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
+                contentDescription = ""
+            )
+            Spacer(Modifier.width(8.dp))
+            Image(
+                painter = painterResource(id = R.drawable.ic_content_copy),
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(
+                        RoundedCornerShape(16.dp)
+                    )
+                    .clickable {
+                        val clipboard =
+                            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(
+                            ClipData.newPlainText(
+                                cat.name,
+                                data.text
+                            )
+                        )
+                        msgBoxVM.markAsRead(cat)
+                        Toast
+                            .makeText(
+                                context,
+                                R.string.toast_content_copied,
+                                Toast.LENGTH_SHORT
+                            )
+                            .show()
+                    }
+                    .padding(all = 4.dp),
+                colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
+                contentDescription = ""
+            )
+            Spacer(Modifier.width(12.dp))
         }
     }
 }

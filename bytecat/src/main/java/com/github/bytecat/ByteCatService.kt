@@ -7,7 +7,7 @@ import android.os.IBinder
 class ByteCatService : Service() {
 
     private val byteCatBinder: ByteCatBinder by lazy {
-        ByteCatBinder()
+        ByteCatBinder(this)
     }
 
     override fun onCreate() {

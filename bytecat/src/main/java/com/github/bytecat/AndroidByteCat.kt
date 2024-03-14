@@ -49,8 +49,20 @@ class AndroidByteCat : ByteCat() {
             thread.start()
         }
 
+        override fun cancel(task: Runnable) {
+            handler.removeCallbacks(task)
+        }
+
         override fun post(task: Runnable) {
             handler.post(task)
+        }
+
+        override fun post(delay: Long, task: Runnable) {
+            handler.postDelayed(task, delay)
+        }
+
+        override fun shutdown() {
+            thread.looper.quit()
         }
 
     }

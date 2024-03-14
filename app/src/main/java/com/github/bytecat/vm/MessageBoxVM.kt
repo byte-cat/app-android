@@ -1,10 +1,11 @@
 package com.github.bytecat.vm
 
+import android.os.Parcelable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import com.github.bytecat.ByteCatManager
 import com.github.bytecat.CatParcel
-import com.github.bytecat.message.MessageDataParcel
+import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 
 class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.MessageCallback {
@@ -12,23 +13,21 @@ class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.Mes
     private val recentMessages = mutableStateMapOf<CatParcel, MessageParcel<*>>()
 
     private fun newMessage(catParcel: CatParcel, messageParcel: MessageParcel<*>) {
-        recentMessages[catParcel] = messageParcel
+        when (messageParcel.data) {
+            is TextDataParcel -> {
+                recentMessages[catParcel] = messageParcel
+            }
+        }
     }
 
     fun hasTextMessage(catParcel: CatParcel): Boolean {
         return recentMessages[catParcel]?.data?.let {
-            it is MessageDataParcel
+            it is TextDataParcel
         } ?: false
     }
 
-    fun getTextMessageOrNull(catParcel: CatParcel): MessageDataParcel? {
-        return recentMessages[catParcel]?.data?.let {
-            if (it is MessageDataParcel) {
-                it
-            } else {
-                null
-            }
-        }
+    fun getMessageDataOrNull(catParcel: CatParcel): Parcelable? {
+        return recentMessages[catParcel]?.data
     }
 
     fun markAsRead(catParcel: CatParcel) {
