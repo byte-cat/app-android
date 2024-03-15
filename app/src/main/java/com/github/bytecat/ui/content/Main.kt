@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -54,6 +56,7 @@ import com.github.bytecat.CatParcel
 import com.github.bytecat.R
 import com.github.bytecat.ext.iconRes
 import com.github.bytecat.message.FileReqDataParcel
+import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.vm.CatBookVM
 import com.github.bytecat.vm.MessageBoxVM
@@ -203,10 +206,13 @@ fun MainContent(
                                         FileReqView(data = data, cat = item, msgBoxVM = msgBoxVM)
                                     }
 
+                                    is FileResDataParcel -> {
+                                        FileResAcceptView(data, item, msgBoxVM)
+                                    }
+
                                     else -> null
                                 }
                             }
-
                         }
                     )
                     if (index < catBookVM.cats.lastIndex) {
@@ -261,7 +267,7 @@ fun MyCatView(myCat: CatParcel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(80.dp),
             painter = painterResource(id = myCat.platform.iconRes),
             colorFilter = ColorFilter.tint(colorResource(id = R.color.cat_item_icon_tint)),
             contentDescription = ""
@@ -270,12 +276,11 @@ fun MyCatView(myCat: CatParcel) {
         Text(
             text = myCat.name,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
+            fontSize = 18.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = myCat.ip,
-            fontWeight = FontWeight.Light,
             fontSize = 12.sp
         )
     }
@@ -306,19 +311,19 @@ fun CatItemView(
             )
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1F)) {
-                Text(
+                CompactSingleLineText(
                     text = cat.name,
                     modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = colorResource(id = R.color.cat_item_name),
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
+                CompactSingleLineText(
                     text = cat.ip,
                     modifier = Modifier.fillMaxWidth(),
-                    fontWeight = FontWeight.Light,
                     fontSize = 10.sp
                 )
             }
@@ -476,15 +481,40 @@ fun TextDataView(data: TextDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
 fun FileReqView(data: FileReqDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
     val context = LocalContext.current
     Column {
-        Text(
-            text = "${data.name}(${Formatter.formatFileSize(context, data.size)})",
+        Row(
             modifier = Modifier.padding(16.dp),
-            color = colorResource(id = R.color.cat_item_name),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Normal,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_file_send_outline),
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(4.dp),
+                contentDescription = ""
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                CompactSingleLineText(
+                    text = data.name,
+                    color = colorResource(id = R.color.cat_item_name),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.W900,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                CompactSingleLineText(
+                    text = Formatter.formatFileSize(context, data.size),
+                    color = colorResource(id = R.color.cat_item_name),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Normal,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
         Divider()
         DoubleImageButtonsRow(
             painter1 = painterResource(id = R.drawable.ic_close),
@@ -498,6 +528,15 @@ fun FileReqView(data: FileReqDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM)
                 msgBoxVM.markAsRead(cat)
             }
         )
+    }
+}
+
+@Composable
+fun FileResAcceptView(data: FileResDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
+    Log.d(TAG, "!!!FileResAcceptView!!!")
+    Column {
+        Text(text = "Accepted")
+        LinearProgressIndicator()
     }
 }
 

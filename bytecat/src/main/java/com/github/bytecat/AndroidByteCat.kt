@@ -35,7 +35,7 @@ class AndroidByteCat(private val context: Context) : ByteCat() {
         }
     }
 
-    override var outputDir: File = File(context.filesDir, "download")
+    override var outputDir: File = context.getExternalFilesDir("download")!!
         get() {
             if (!field.exists()) {
                 field.mkdirs()

@@ -3,9 +3,11 @@ package com.github.bytecat
 import android.content.Context
 import android.net.Uri
 import android.os.Parcelable
+import android.util.Log
 import com.github.bytecat.contact.Cat
 import com.github.bytecat.contact.CatBook
 import com.github.bytecat.file.DefaultFile
+import com.github.bytecat.file.TransferCallback
 import com.github.bytecat.file.UriFile
 import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.FileResDataParcel
@@ -104,14 +106,33 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
     }
     private var callback: ICallback? = null
 
+    private val fileSendCallback = object : TransferCallback {
+        override fun onError() {
+        }
+
+        override fun onStart(owner: Cat, totalSize: Long) {
+            Log.d(TAG, "onStart totalSize=$totalSize")
+        }
+
+        override fun onSuccess(owner: Cat, md5: String, acceptCode: String) {
+            Log.d(TAG, "onSuccess ")
+        }
+
+        override fun onTransfer(owner: Cat, transferSize: Long, totalSize: Long) {
+            Log.d(TAG, "onTransfer percent=${transferSize.toDouble() / totalSize * 100}")
+        }
+    }
+
     fun startup() {
         byteCat.catBook.registerCallback(catBookCallback)
+        byteCat.fileSendManager.registerCallback(fileSendCallback)
         byteCat.startup()
     }
 
     fun shutdown() {
         callback = null
         byteCat.catBook.unregisterCallback(catBookCallback)
+        byteCat.fileSendManager.unregisterCallback(fileSendCallback)
         byteCat.shutdown()
     }
 

@@ -1,15 +1,21 @@
 package com.github.bytecat.vm
 
 import android.os.Parcelable
+import android.util.Log
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import com.github.bytecat.ByteCatManager
 import com.github.bytecat.CatParcel
 import com.github.bytecat.message.FileReqDataParcel
+import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 
 class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.MessageCallback {
+
+    companion object {
+        private const val TAG = "MessageBoxVM"
+    }
 
     private val recentMessages = mutableStateMapOf<CatParcel, MessageParcel<*>>()
 
@@ -17,6 +23,13 @@ class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.Mes
         when (messageParcel.data) {
             is TextDataParcel, is FileReqDataParcel -> {
                 recentMessages[catParcel] = messageParcel
+            }
+            is FileResDataParcel -> {
+                val fileRes = messageParcel.data as FileResDataParcel
+                Log.d(TAG, "newMessage ${fileRes.isAccepted}")
+                if (fileRes.isAccepted) {
+                    recentMessages[catParcel] = messageParcel
+                }
             }
         }
     }
