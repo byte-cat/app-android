@@ -59,13 +59,14 @@ import com.github.bytecat.message.FileReqDataParcel
 import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.vm.CatBookVM
+import com.github.bytecat.vm.FileSendVM
 import com.github.bytecat.vm.MessageBoxVM
 
 private const val TAG = "Main"
 
 @Composable
 fun MainView(
-    catBookVM: CatBookVM, msgBoxVM: MessageBoxVM
+    catBookVM: CatBookVM, msgBoxVM: MessageBoxVM, fileSendVM: FileSendVM
 ) {
     val pendingMessageCat = remember {
         mutableStateOf<CatParcel?>(null)
@@ -88,6 +89,7 @@ fun MainView(
     MainContent(
         catBookVM = catBookVM,
         msgBoxVM = msgBoxVM,
+        fileSendVM = fileSendVM,
         onItemClick = { cat, index -> },
         onFileClick = { cat, index ->
             pendingFileCat.value = cat
@@ -106,7 +108,7 @@ fun MainView(
 
 @Composable
 fun MainContent(
-    catBookVM: CatBookVM, msgBoxVM: MessageBoxVM,
+    catBookVM: CatBookVM, msgBoxVM: MessageBoxVM, fileSendVM: FileSendVM,
     onItemClick: (cat: CatParcel, index: Int) -> Unit,
     onFileClick: (cat: CatParcel, index: Int) -> Unit,
     onMsgClick: (cat: CatParcel, index: Int) -> Unit
@@ -207,7 +209,7 @@ fun MainContent(
                                     }
 
                                     is FileResDataParcel -> {
-                                        FileResAcceptView(data, item, msgBoxVM)
+                                        FileResAcceptView(data, item, fileSendVM)
                                     }
 
                                     else -> null
@@ -532,11 +534,15 @@ fun FileReqView(data: FileReqDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM)
 }
 
 @Composable
-fun FileResAcceptView(data: FileResDataParcel, cat: CatParcel, msgBoxVM: MessageBoxVM) {
+fun FileResAcceptView(data: FileResDataParcel, cat: CatParcel, fileSendVM: FileSendVM) {
     Log.d(TAG, "!!!FileResAcceptView!!!")
     Column {
-        Text(text = "Accepted")
-        LinearProgressIndicator()
+        data.acceptCode
+        LinearProgressIndicator(
+            progress = fileSendVM.getPosition(data.acceptCode),
+
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

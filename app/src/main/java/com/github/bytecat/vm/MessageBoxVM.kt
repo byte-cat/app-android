@@ -11,7 +11,7 @@ import com.github.bytecat.message.FileResDataParcel
 import com.github.bytecat.message.TextDataParcel
 import com.github.bytecat.message.MessageParcel
 
-class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.MessageCallback {
+class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.MessageCallback, ByteCatManager.FileTransferCallback {
 
     companion object {
         private const val TAG = "MessageBoxVM"
@@ -62,6 +62,10 @@ class MessageBoxVM : ViewModel(), ByteCatManager.CatCallback, ByteCatManager.Mes
 
     override fun onMessageReceived(cat: CatParcel, message: MessageParcel<*>) {
         newMessage(cat, message)
+    }
+
+    override fun onSuccess(owner: CatParcel, transferId: String) {
+        markAsRead(owner)
     }
 
 }

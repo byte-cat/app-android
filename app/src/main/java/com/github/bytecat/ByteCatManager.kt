@@ -58,13 +58,54 @@ object ByteCatManager {
     val catCallbackRegistry = Registry<CatCallback>()
     val messageCallbackRegistry = Registry<MessageCallback>()
 
+    private val fileSendCallback = object : TransferCallbackImpl() {
+        override fun onStart(owner: CatParcel?, transferId: String?, totalSize: Long) {
+            owner ?: return
+            transferId ?: return
+            sendCallbackRegistry.forEach {
+                it.onStart(owner, transferId, totalSize)
+            }
+        }
+
+        override fun onTransfer(
+            owner: CatParcel?,
+            transferId: String?,
+            transferSize: Long,
+            totalSize: Long
+        ) {
+            owner ?: return
+            transferId ?: return
+            sendCallbackRegistry.forEach {
+                it.onTransfer(owner, transferId, transferSize, totalSize)
+            }
+        }
+
+        override fun onSuccess(owner: CatParcel?, transferId: String?) {
+            owner ?: return
+            transferId ?: return
+            sendCallbackRegistry.forEach {
+                it.onSuccess(owner, transferId)
+            }
+        }
+
+        override fun onError(owner: CatParcel?, transferId: String?) {
+            owner ?: return
+            transferId ?: return
+            sendCallbackRegistry.forEach {
+                onError(owner, transferId)
+            }
+        }
+
+    }
+    val sendCallbackRegistry = Registry<FileTransferCallback>()
+
     private var connectCallback: ConnectCallback? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val catService = IByteCatService.Stub.asInterface(service)
             catService.setCallback(catServiceCallback)
-            Log.d(TAG, "onServiceConnected=$connectCallback")
+            catService.setFileSendCallback(fileSendCallback)
 
             connectCallback?.onConnected(catService)
             iCatService = catService
@@ -79,7 +120,6 @@ object ByteCatManager {
     private var connectedContextRef: WeakReference<Context>? = null
 
     fun connect(context: Context, callback: ConnectCallback) {
-        Log.d(TAG, "connect iCatService=$iCatService")
         this.connectCallback = callback
         if (iCatService != null) {
             callback.onConnected(iCatService!!)
@@ -129,6 +169,21 @@ object ByteCatManager {
 
     interface MessageCallback {
         fun onMessageReceived(cat: CatParcel, message: MessageParcel<*>)
+    }
+
+    interface FileTransferCallback {
+        fun onStart(owner: CatParcel, transferId: String, totalSize: Long) {}
+
+        fun onTransfer(
+            owner: CatParcel,
+            transferId: String,
+            transferSize: Long,
+            totalSize: Long
+        ) {}
+
+        fun onSuccess(owner: CatParcel, transferId: String) {}
+
+        fun onError(owner: CatParcel, transferId: String) {}
     }
 
 }

@@ -13,6 +13,7 @@ import com.github.bytecat.contact.CatBook
 import com.github.bytecat.ui.content.MainView
 import com.github.bytecat.ui.theme.ByteCatTheme
 import com.github.bytecat.vm.CatBookVM
+import com.github.bytecat.vm.FileSendVM
 import com.github.bytecat.vm.MessageBoxVM
 
 class MainActivity : ComponentActivity() {
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
 
     private val catBookVM by lazy { CatBookVM() }
     private val messageBoxVM by lazy { MessageBoxVM() }
+    private val fileSendVM by lazy { FileSendVM() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +36,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainView(catBookVM, messageBoxVM)
+                    MainView(catBookVM, messageBoxVM, fileSendVM)
                 }
             }
         }
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
         ByteCatManager.catCallbackRegistry.register(catBookVM)
         ByteCatManager.catCallbackRegistry.register(messageBoxVM)
         ByteCatManager.messageCallbackRegistry.register(messageBoxVM)
+        ByteCatManager.sendCallbackRegistry.register(fileSendVM)
+        ByteCatManager.sendCallbackRegistry.register(messageBoxVM)
         ByteCatManager.connect(this, object : ByteCatManager.ConnectCallback {
             override fun onConnected(catService: IByteCatService) {
             }
@@ -57,6 +61,8 @@ class MainActivity : ComponentActivity() {
         ByteCatManager.catCallbackRegistry.unregister(catBookVM)
         ByteCatManager.catCallbackRegistry.unregister(messageBoxVM)
         ByteCatManager.messageCallbackRegistry.unregister(messageBoxVM)
+        ByteCatManager.sendCallbackRegistry.unregister(fileSendVM)
+        ByteCatManager.sendCallbackRegistry.unregister(messageBoxVM)
         ByteCatManager.disconnect()
     }
 
@@ -71,6 +77,6 @@ fun GreetingPreview() {
     catBook.addCat("Cat3", "Android", "3456", 0, 1)
     catBook.addCat("Cat4", "Android", "4567", 0, 1)
     MainView(
-        catBookVM = CatBookVM(), msgBoxVM = MessageBoxVM()
+        catBookVM = CatBookVM(), msgBoxVM = MessageBoxVM(), fileSendVM = FileSendVM()
     )
 }

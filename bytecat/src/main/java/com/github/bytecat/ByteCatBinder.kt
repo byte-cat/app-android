@@ -42,13 +42,11 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
 
     private val byteCat by lazy { AndroidByteCat(context).apply { setCallback(catCallback) } }
 
-    private val catParcels = LinkedList<CatParcel>()
+    private val catParcels = HashMap<String, CatParcel>()
 
     private val messageCallback = object : MessageBox.Callback {
         override fun onMessageReceived(cat: Cat, message: Message<*>) {
-            val catParcel = catParcels.firstOrNull {
-                it.ip == cat.ip
-            }
+            val catParcel = catParcels[cat.ip] ?: return
             val msgParcel = MessageParcel.fromReceive<Parcelable>(message, object : MessageParcel.Converter {
                 override fun <T : Parcelable> convert(data: Data): T {
                     return when(data) {
@@ -74,7 +72,7 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
         object : CatBook.Callback {
             override fun onContactAdd(cat: Cat) {
                 val catParcel = CatParcel(cat)
-                catParcels.add(catParcel)
+                catParcels[cat.ip] = catParcel
 
                 MessageBox.obtain(cat).registerCallback(messageCallback)
 
@@ -82,10 +80,7 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
             }
 
             override fun onContactRemove(cat: Cat) {
-                val catParcel = catParcels.firstOrNull {
-                    it.ip == cat.ip
-                } ?: return
-                catParcels.remove(cat)
+                val catParcel = catParcels.remove(cat.ip) ?: return
 
                 MessageBox.obtain(cat).unregisterCallback(messageCallback)
 
@@ -93,33 +88,42 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
             }
 
             override fun onContactUpdate(cat: Cat) {
-                val index = catParcels.indexOfFirst {
-                    it.ip == cat.ip
-                }
-                if (index >= 0) {
-                    val catParcel = CatParcel(cat)
-                    catParcels[index] = catParcel
-                    callback?.onCatUpdate(catParcel)
-                }
+                val catParcel = CatParcel(cat)
+                catParcels[cat.ip] = catParcel
+                callback?.onCatUpdate(catParcel)
             }
         }
     }
     private var callback: ICallback? = null
 
     private val fileSendCallback = object : TransferCallback {
-        override fun onError() {
+
+        var outSendCallback: ITransferCallback? = null
+
+        override fun onError(owner: Cat, transferId: String, e: Throwable) {
+            val catParcel = catParcels[owner.ip] ?: return
+            outSendCallback?.onSuccess(catParcel, transferId)
         }
 
-        override fun onStart(owner: Cat, totalSize: Long) {
+        override fun onStart(owner: Cat, transferId: String, totalSize: Long) {
+            val catParcel = catParcels[owner.ip]
+            outSendCallback?.onStart(catParcel, transferId, totalSize)
             Log.d(TAG, "onStart totalSize=$totalSize")
         }
 
-        override fun onSuccess(owner: Cat, md5: String, acceptCode: String) {
-            Log.d(TAG, "onSuccess ")
+        override fun onSuccess(owner: Cat, transferId: String, md5: String) {
+            val catParcel = catParcels[owner.ip] ?: return
+            outSendCallback?.onSuccess(catParcel, transferId)
         }
 
-        override fun onTransfer(owner: Cat, transferSize: Long, totalSize: Long) {
-            Log.d(TAG, "onTransfer percent=${transferSize.toDouble() / totalSize * 100}")
+        override fun onTransfer(
+            owner: Cat,
+            transferId: String,
+            transferSize: Long,
+            totalSize: Long
+        ) {
+            val catParcel = catParcels[owner.ip] ?: return
+            outSendCallback?.onTransfer(catParcel, transferId, transferSize, totalSize)
         }
     }
 
@@ -180,6 +184,13 @@ class ByteCatBinder(private val context: Context) : IByteCatService.Stub() {
         if (::myCat.isInitialized) {
             callback?.onReady(myCat)
         }
+    }
+
+    override fun setFileSendCallback(callback: ITransferCallback?) {
+        this.fileSendCallback.outSendCallback = callback
+    }
+
+    override fun setFileReceiveCallback(callback: ITransferCallback?) {
     }
 
 }

@@ -6,6 +6,7 @@ import com.github.bytecat.CatParcel;
 import com.github.bytecat.message.FileReqDataParcel;
 import com.github.bytecat.message.FileResDataParcel;
 import com.github.bytecat.ICallback;
+import com.github.bytecat.ITransferCallback;
 
 interface IByteCatService {
     List<CatParcel> getCats();
@@ -16,4 +17,6 @@ interface IByteCatService {
     void acceptFileRequest(in CatParcel toCat, in FileReqDataParcel fileReq);
 
     void setCallback(ICallback callback);
+    void setFileSendCallback(ITransferCallback callback);
+    void setFileReceiveCallback(ITransferCallback callback);
 }
